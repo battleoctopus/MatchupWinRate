@@ -20,6 +20,9 @@ namespace MatchupWinRate
         {
             InitializeComponent();
             this.region.Text = "NA";
+            this.champions.Visible = false;
+            this.status.Visible = false;
+            this.overallWin.Visible = false;
         }
 
         // Event: go is clicked. Gets data for summoner and region and populates
@@ -31,6 +34,7 @@ namespace MatchupWinRate
             overallWin.Refresh();
 
             status.Text = String.Empty;
+            status.Visible = true;
             status.Refresh();
 
             champions.Items.Clear();
@@ -63,15 +67,16 @@ namespace MatchupWinRate
             }
 
             champions.SelectedIndex = 0;
-            champions_TextChanged("", new EventArgs());
+            champions_SelectedIndexChanged(String.Empty, new EventArgs());
+            champions.Visible = true;
 
             status.Text = "done with " + model.CountMatches() + " games";
             status.Refresh();
         }
 
-        // Event: The text in champions is changed. Calculates the win rates for
-        //        champions and displays it in data.
-        private void champions_TextChanged(object sender, EventArgs e)
+        // Event: The selected index in champions is changed. Calculates the win
+        //        rates for champions and displays it in data.
+        private void champions_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (champions.Text != String.Empty)
             {
@@ -91,8 +96,19 @@ namespace MatchupWinRate
                     gamePlurality = " game";
                 }
 
-                overallWin.Text = champions.Text + " win rate: " + personalChampionWinRate + "% for " + games + gamePlurality;
+                overallWin.Text = "win rate: " + personalChampionWinRate.ToString("0.#") + "% in " + games + gamePlurality;
+                overallWin.Visible = true;
                 overallWin.Refresh();
+            }
+        }
+
+        // Event: A key press in summoner. If "enter" was pressed, calls
+        //        go_Click().
+        private void summoner_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char) ENTER)
+            {
+                go_Click(String.Empty, new EventArgs());
             }
         }
     }
