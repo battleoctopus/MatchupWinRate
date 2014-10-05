@@ -27,8 +27,9 @@ namespace MatchupWinRate
         public Reader reader;
         private Dictionary<int, PersonalParticipant> personalHistory = new Dictionary<int, PersonalParticipant>();
         private ConcurrentDictionary<int, List<int>> globalHistory = new ConcurrentDictionary<int, List<int>>();
-        private Dictionary<int, Dictionary<int, Dictionary<Stats, int>>> championStats = new Dictionary<int, Dictionary<int, Dictionary<Stats, int>>>();
-        private Dictionary<int, String> championNames = new Dictionary<int, String>();
+        public Dictionary<int, Dictionary<int, Dictionary<Stats, int>>> championStats = new Dictionary<int, Dictionary<int, Dictionary<Stats, int>>>();
+        public Dictionary<int, String> championNames = new Dictionary<int, String>();
+        public Dictionary<String, int> championIds = new Dictionary<String, int>();
         public DataTable winRates = new DataTable();
         private String region;
         private const int MATCH_SEARCH_LIMIT = 15; // Riot restricts the amount of match history that can be searched
@@ -41,7 +42,7 @@ namespace MatchupWinRate
             reader = new Reader();
             this.region = region;
 
-            // populate championNames
+            // populate championNames and championIds
             String champions = reader.Request(Coder.GetChampionNamesUrl());
             Regex regexId = new Regex("\"id\":(\\d+)");
             MatchCollection idMatches = regexId.Matches(champions);
@@ -53,6 +54,7 @@ namespace MatchupWinRate
                 int id = Convert.ToInt32(idMatches[i].Groups[1].Value);
                 String name = nameMatches[i].Groups[1].Value;
                 championNames[id] = name;
+                championIds[name] = id;
             }
         }
 
@@ -170,6 +172,7 @@ namespace MatchupWinRate
         // dictionary.
         public void CalcWinRates(int allyChampionId)
         {
+            winRates = new DataTable();
             winRates.Columns.Add("Champion", typeof(String));
             winRates.Columns.Add(WIN_RATE, typeof(double));
             winRates.Columns.Add(GAMES, typeof(int));
@@ -212,6 +215,44 @@ namespace MatchupWinRate
         public int CountMatches()
         {
             return personalHistory.Keys.Count;
+        }
+
+        // Calculates personal win rate for a champion.
+        public double CalcPersonalChampionWinRate(int championId)
+        {
+            int games = 0;
+            int wins = 0;
+
+            foreach(int matchId in personalHistory.Keys)
+            {
+                if (personalHistory[matchId].championId == championId)
+                {
+                    games += 1;
+
+                    if (personalHistory[matchId].isWin)
+                    {
+                        wins += 1;
+                    }
+                }
+            }
+
+            return 100d * wins / games;
+        }
+
+        // Counts number of matches for a champion.
+        public int CountMatchesForChampion(int championId)
+        {
+            int games = 0;
+
+            foreach(int matchId in personalHistory.Keys)
+            {
+                if (personalHistory[matchId].championId == championId)
+                {
+                    games += 1;
+                }
+            }
+
+            return games;
         }
     }
 
